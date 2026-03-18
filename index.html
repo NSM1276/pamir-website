@@ -28,6 +28,7 @@
 
 <!-- HERO -->
 <section id="hero">
+    <canvas id="particles"></canvas>
     <div class="hero-bg-pattern"></div>
     <div class="hero-bg-img" style="position:absolute;inset:0;background:url('hero.jpg') center/cover no-repeat;opacity:0.18;z-index:0;"></div>
     <div class="hero-glow"></div>
@@ -274,6 +275,118 @@
     <p>Pizza & Kebap · Wien Meidling</p>
     <p>⭐ 4,4 auf Google</p>
 </footer>
+
+<script>
+// ЧАСТИЦЫ
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const particles = [];
+for (let i = 0; i < 70; i++) {
+    particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2.5 + 0.5,
+        dx: (Math.random() - 0.5) * 0.8,
+        dy: (Math.random() - 0.5) * 0.8,
+        alpha: Math.random() * 0.6 + 0.2
+    });
+}
+
+function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 214, 0, ${p.alpha})`;
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+    });
+    requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ПЛАВНОЕ ПОЯВЛЕНИЕ СЕКЦИЙ
+const fadeEls = document.querySelectorAll('.menu-item, .review-card, .ueber-stat, .info-list li, .hero-food-card, .section-header');
+fadeEls.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+});
+
+const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+            setTimeout(() => {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }, i * 80);
+            scrollObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.1 });
+
+fadeEls.forEach(el => scrollObserver.observe(el));
+
+// АНИМАЦИЯ ЦИФР
+function animateNumber(el, target, suffix = '') {
+    let current = 0;
+    const step = target / 60;
+    const interval = setInterval(() => {
+        current += step;
+        if (current >= target) {
+            current = target;
+            clearInterval(interval);
+        }
+        el.textContent = Number.isInteger(target) ? Math.ceil(current) + suffix : current.toFixed(1) + suffix;
+    }, 25);
+}
+
+const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const el = entry.target;
+            const target = parseFloat(el.getAttribute('data-target'));
+            const suffix = el.getAttribute('data-suffix') || '';
+            animateNumber(el, target, suffix);
+            counterObserver.unobserve(el);
+        }
+    });
+}, { threshold: 0.5 });
+
+// Добавляем data-target на цифры
+document.querySelectorAll('.rating-number').forEach(el => {
+    el.setAttribute('data-target', '4.4');
+    el.setAttribute('data-suffix', '');
+    el.textContent = '0';
+    counterObserver.observe(el);
+});
+
+document.querySelectorAll('.ueber-stat strong').forEach(el => {
+    const text = el.textContent.trim();
+    if (text === '4,4★') {
+        el.setAttribute('data-target', '4.4');
+        el.setAttribute('data-suffix', '★');
+        el.textContent = '0★';
+        counterObserver.observe(el);
+    } else if (text === '100%') {
+        el.setAttribute('data-target', '100');
+        el.setAttribute('data-suffix', '%');
+        el.textContent = '0%';
+        counterObserver.observe(el);
+    }
+});
+</script>
 
 </body>
 </html>
